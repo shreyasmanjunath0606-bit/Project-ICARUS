@@ -1,0 +1,10 @@
+{
+  "name": "Remix: Project Icarus",
+  "description": "Proof-of-Effort decentralized ecosystem for performance-based charitable giving with AI Emotional Support for kids.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": [
+    "Blockchain",
+    "AI Verification",
+    "Soulbound Tokens"
+  ]
+}
