@@ -67,13 +67,20 @@ export default function App() {
           </button>
         </div>
 
-        {/* AI Assistant Cluster */}
-        <div className="flex items-end gap-3 h-fit">
-          <div className="w-80">
-            <GeminiAssistant />
-          </div>
-          <CareCompanion />
-        </div>
+        {/* AI Assistant Cluster - Only visible in Student mode */}
+        {view === 'student' && (
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="flex items-end gap-3 h-fit"
+          >
+            <div className="w-80">
+              <GeminiAssistant />
+            </div>
+            <CareCompanion />
+          </motion.div>
+        )}
       </div>
     </div>
   );
