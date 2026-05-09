@@ -10,9 +10,10 @@ import { extractCourseFromWeb, suggestCurriculumByBudget } from '../services/gem
 
 type AgeRange = "4-7" | "8-12" | "13-18";
 
-export default function Dashboard() {
+export default function Dashboard({ treasuryBalance, setTreasuryBalance }: { treasuryBalance: number, setTreasuryBalance: React.Dispatch<React.SetStateAction<number>> }) {
   const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRange>("8-12");
   const [activeCourses, setActiveCourses] = useState<Course[]>(initialCourses);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -27,7 +28,6 @@ export default function Dashboard() {
   const [activeCourse, setActiveCourse] = useState<Course | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [impactScore, setImpactScore] = useState(2450);
-  const [treasuryBalance, setTreasuryBalance] = useState(102450);
 
   const filteredCourses = activeCourses.filter(c => c.ageRange === selectedAgeRange);
 
@@ -38,13 +38,20 @@ export default function Dashboard() {
     addLog(`Filter Applied: Vanguard Age Group ${range}.`);
   };
 
-  const handleSuggestAICourse = async () => {
+  const categoriesByAge: Record<AgeRange, string[]> = {
+    "4-7": ["Art", "Storytelling", "Games", "Basic Coding"],
+    "8-12": ["Math", "Science", "Coding", "Financial Literacy"],
+    "13-18": ["Programming", "AI", "Electronics", "Quantum"]
+  };
+
+  const handleSuggestAICourse = async (category?: string) => {
     if (!selectedAgeRange) return;
     setIsSuggesting(true);
+    setShowCategoryModal(false);
     addLog(`AI Agent: Analyzing Treasury (₹${treasuryBalance.toLocaleString()}) for optimization...`);
 
     try {
-      const suggestedData = await suggestCurriculumByBudget(treasuryBalance, selectedAgeRange);
+      const suggestedData = await suggestCurriculumByBudget(treasuryBalance, selectedAgeRange, category);
       const newCourse: Course = {
         ...suggestedData,
         id: `ai-${Date.now()}`,
@@ -53,7 +60,7 @@ export default function Dashboard() {
       };
 
       setActiveCourses(prev => [newCourse, ...prev]);
-      addLog(`AI Allocation: Generated module "${newCourse.title}" @ ₹${newCourse.rewardValue.toLocaleString()}`);
+      addLog(`AI Allocation: Generated module "${newCourse.title}" @ ₹${newCourse.rewardValue.toLocaleString()} in ${category || "General"}`);
     } catch (error) {
       addLog("AI Allocation: Analysis failed. Check connection.");
     } finally {
@@ -226,6 +233,65 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
+      {/* Category Selection Modal */}
+      <AnimatePresence>
+        {showCategoryModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            onClick={() => setShowCategoryModal(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[40px] p-10 shadow-2xl relative overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500"></div>
+              
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Select Learning Category</h3>
+                  <p className="text-[10px] text-slate-500 uppercase font-mono tracking-widest mt-1">Intelligence Mapping for Ages {selectedAgeRange}</p>
+                </div>
+                <button onClick={() => setShowCategoryModal(false)} className="p-2 hover:bg-white/5 rounded-full text-slate-500 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {categoriesByAge[selectedAgeRange].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => handleSuggestAICourse(cat)}
+                    className="group relative flex items-center justify-between px-6 py-5 bg-black/40 border border-white/5 rounded-2xl hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 group-hover:bg-indigo-500 group-hover:text-black transition-all">
+                        <Zap size={18} />
+                      </div>
+                      <span className="text-sm font-bold text-slate-300 group-hover:text-white uppercase tracking-[0.1em]">{cat}</span>
+                    </div>
+                    <ChevronRight size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-white/5 flex items-center gap-3">
+                <div className="shrink-0 p-2 bg-cyan-500/10 rounded-lg">
+                  <Sparkles size={14} className="text-cyan-400" />
+                </div>
+                <p className="text-[9px] text-slate-500 leading-relaxed font-mono uppercase tracking-wider">
+                  AI will generate a 5-checkpoint verified curriculum optimized for the current vault liquidity.
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <nav className="h-16 border-b border-white/5 bg-slate-950/80 backdrop-blur-xl flex items-center justify-between px-8 flex-shrink-0 relative z-20">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-black border border-white/10 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.1)]">
@@ -319,7 +385,7 @@ export default function Dashboard() {
 
             <div className="flex items-center gap-3">
               <button 
-                onClick={handleSuggestAICourse}
+                onClick={() => setShowCategoryModal(true)}
                 disabled={isSuggesting}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 text-xs font-bold rounded-xl border border-indigo-500/20 hover:bg-indigo-500/20 transition-all disabled:opacity-50"
               >
@@ -444,7 +510,7 @@ export default function Dashboard() {
                   <h3 className="text-lg font-bold text-white mb-2">No Modules Identified</h3>
                   <p className="text-slate-500 text-sm max-w-sm mx-auto mb-8">The registry is currently empty for this age range. Use the AI Allocator to generate optimized learning paths.</p>
                   <button 
-                    onClick={handleSuggestAICourse}
+                    onClick={() => setShowCategoryModal(true)}
                     className="px-6 py-3 bg-cyan-500/10 text-cyan-400 text-xs font-bold rounded-xl border border-cyan-500/20 hover:bg-cyan-500/20 transition-all flex items-center gap-2"
                   >
                     <Sparkles size={16} />

@@ -15,7 +15,11 @@ import {
   Filter,
   ArrowUpRight,
   Award,
-  BookOpen
+  BookOpen,
+  CreditCard,
+  Globe,
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
@@ -63,28 +67,40 @@ const logs = [
   "SBT Minted: Ishita K. earned 'Data Explorer' Soulbound Token.",
 ];
 
-export default function DonorDashboard() {
+export default function DonorDashboard({ onDonation }: { onDonation?: (amount: number) => void }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'All' | 'Active' | 'Learning'>('All');
+  const [selectedStudent, setSelectedStudent] = useState<typeof students[0] | null>(null);
   const [isDonating, setIsDonating] = useState(false);
   const [donationSuccess, setDonationSuccess] = useState(false);
+  const [donationStep, setDonationStep] = useState<1 | 2>(1);
+  const [paymentMethod, setPaymentMethod] = useState<'gpay' | 'card' | 'netbanking' | null>(null);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState('');
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
 
   const chartData = timeRange === 'daily' ? dailyData : timeRange === 'monthly' ? monthlyData : weeklyData;
 
   const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.id.toLowerCase().includes(searchTerm.toLowerCase())
+    (s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     s.id.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (filterStatus === 'All' || s.status === filterStatus)
   );
 
   const handleDonateAction = () => {
     setIsDonating(true);
     setDonationSuccess(false);
+    setDonationStep(1);
+    setPaymentMethod(null);
     setSelectedAmount(null);
+    setCustomAmount('');
   };
 
   const processDonation = () => {
     // Simulate cryptographic commitment
+    if (selectedAmount && onDonation) {
+      onDonation(selectedAmount);
+    }
     setDonationSuccess(true);
     setTimeout(() => {
       setIsDonating(false);
@@ -161,49 +177,122 @@ export default function DonorDashboard() {
                   </div>
 
                   <div className="space-y-8">
-                    <div>
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 block">Select Amount (INR)</label>
-                      <div className="grid grid-cols-3 gap-4">
-                        {[1000, 5000, 10000].map(amt => (
-                          <button 
-                            key={amt}
-                            onClick={() => setSelectedAmount(amt)}
-                            className={`px-4 py-6 rounded-[24px] border transition-all text-sm font-bold font-mono ${
-                              selectedAmount === amt 
-                                ? 'bg-cyan-500 border-cyan-400 text-black shadow-lg shadow-cyan-500/20' 
-                                : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/20'
-                            }`}
-                          >
-                            ₹{amt.toLocaleString()}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    {donationStep === 1 ? (
+                      <div className="space-y-8">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 block">Select Payment Method</label>
+                          <div className="grid grid-cols-1 gap-4">
+                            {[
+                              { id: 'gpay', label: 'Google Pay', icon: <Zap size={18} /> },
+                              { id: 'card', label: 'Debit / Credit Card', icon: <CreditCard size={18} /> },
+                              { id: 'netbanking', label: 'Netbanking', icon: <Globe size={18} /> }
+                            ].map(method => (
+                              <button 
+                                key={method.id}
+                                onClick={() => setPaymentMethod(method.id as any)}
+                                className={`flex items-center gap-4 px-6 py-5 rounded-[24px] border transition-all ${
+                                  paymentMethod === method.id 
+                                    ? 'bg-cyan-500/10 border-cyan-500 text-white shadow-lg shadow-cyan-500/5' 
+                                    : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
+                                }`}
+                              >
+                                <div className={`${paymentMethod === method.id ? 'text-cyan-400' : 'text-slate-500'}`}>
+                                  {method.icon}
+                                </div>
+                                <span className="text-sm font-bold uppercase tracking-widest">{method.label}</span>
+                                {paymentMethod === method.id && (
+                                  <div className="ml-auto w-2 h-2 rounded-full bg-cyan-400"></div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
 
-                    <div className="bg-black/50 border border-white/5 rounded-[32px] p-6 space-y-4">
-                      <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-mono">
-                        <span className="text-slate-500">Protocol Fee</span>
-                        <span className="text-slate-300">₹0.00</span>
+                        <button 
+                          disabled={!paymentMethod}
+                          onClick={() => setDonationStep(2)}
+                          className="w-full py-6 bg-white text-black rounded-[24px] font-black uppercase tracking-[0.2em] text-xs hover:bg-cyan-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                        >
+                          Continue to Amount
+                          <ArrowRight size={16} />
+                        </button>
                       </div>
-                      <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-mono">
-                        <span className="text-slate-500">Icarus Commitment</span>
-                        <span className="text-cyan-400">Verified</span>
-                      </div>
-                      <div className="h-[1px] bg-white/5"></div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-black text-white uppercase tracking-widest">Total Proof-of-Effort</span>
-                        <span className="text-xl font-black text-white">₹{selectedAmount?.toLocaleString() || '0'}</span>
-                      </div>
-                    </div>
+                    ) : (
+                      <div className="space-y-8">
+                        <button 
+                          onClick={() => setDonationStep(1)}
+                          className="text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2 hover:text-white transition-colors"
+                        >
+                          <ArrowLeft size={14} />
+                          Back to Payment Method
+                        </button>
 
-                    <button 
-                      disabled={!selectedAmount}
-                      onClick={processDonation}
-                      className="w-full py-6 bg-white text-black rounded-[24px] font-black uppercase tracking-[0.2em] text-xs hover:bg-cyan-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed group flex items-center justify-center gap-3"
-                    >
-                      Process Secure Transfer
-                      <Shield size={16} className="group-hover:animate-pulse" />
-                    </button>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 block">Select Amount (INR)</label>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-3 gap-4">
+                              {[1000, 5000, 10000].map(amt => (
+                                <button 
+                                  key={amt}
+                                  onClick={() => {
+                                    setSelectedAmount(amt);
+                                    setCustomAmount('');
+                                  }}
+                                  className={`px-4 py-6 rounded-[24px] border transition-all text-sm font-bold font-mono ${
+                                    selectedAmount === amt && !customAmount
+                                      ? 'bg-cyan-500 border-cyan-400 text-black shadow-lg shadow-cyan-500/20' 
+                                      : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/20'
+                                  }`}
+                                >
+                                  ₹{amt.toLocaleString()}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="relative">
+                              <input 
+                                type="number" 
+                                placeholder="Or enter custom amount..."
+                                value={customAmount}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  setCustomAmount(e.target.value);
+                                  setSelectedAmount(isNaN(val) ? null : val);
+                                }}
+                                className={`w-full px-6 py-6 bg-white/5 border rounded-[24px] text-sm font-bold font-mono outline-none transition-all ${
+                                  customAmount ? 'border-cyan-500 ring-2 ring-cyan-500/20 text-white shadow-lg shadow-cyan-500/5' : 'border-white/10 text-slate-400 focus:border-white/20'
+                                }`}
+                              />
+                              <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600 uppercase tracking-widest pointer-events-none">INR</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-black/50 border border-white/5 rounded-[32px] p-6 space-y-4">
+                          <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-mono">
+                            <span className="text-slate-500">Payment Method</span>
+                            <span className="text-slate-300 uppercase">{paymentMethod}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-mono">
+                            <span className="text-slate-500">Icarus Commitment</span>
+                            <span className="text-cyan-400">Verified</span>
+                          </div>
+                          <div className="h-[1px] bg-white/5"></div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-black text-white uppercase tracking-widest">Total Proof-of-Effort</span>
+                            <span className="text-xl font-black text-white">₹{selectedAmount?.toLocaleString() || '0'}</span>
+                          </div>
+                        </div>
+
+                        <button 
+                          disabled={!selectedAmount}
+                          onClick={processDonation}
+                          className="w-full py-6 bg-white text-black rounded-[24px] font-black uppercase tracking-[0.2em] text-xs hover:bg-cyan-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed group flex items-center justify-center gap-3"
+                        >
+                          Process Secure Transfer
+                          <Shield size={16} className="group-hover:animate-pulse" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -228,6 +317,96 @@ export default function DonorDashboard() {
                   <p className="text-[10px] text-slate-600 font-mono uppercase tracking-[0.2em]">Transaction ID: ICARUS-{Math.random().toString(36).substring(7).toUpperCase()}</p>
                 </div>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Student Profile Modal */}
+      <AnimatePresence>
+        {selectedStudent && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-8"
+            onClick={() => setSelectedStudent(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-slate-950 border border-white/10 w-full max-w-2xl rounded-[48px] overflow-hidden shadow-2xl relative flex flex-col md:flex-row"
+            >
+              <div className="md:w-2/5 bg-gradient-to-br from-slate-900 to-black p-12 flex flex-col items-center justify-center gap-6 border-b md:border-b-0 md:border-r border-white/5">
+                <div className="w-32 h-32 rounded-[40px] bg-black border-2 border-cyan-500/30 overflow-hidden p-1 shadow-2xl shadow-cyan-500/10">
+                  <img src={selectedStudent.avatar} alt={selectedStudent.name} className="w-full h-full object-cover rounded-[36px]" />
+                </div>
+                <div className="text-center">
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{selectedStudent.name}</h2>
+                  <p className="text-xs text-cyan-400 font-mono uppercase tracking-[0.2em] mt-1">{selectedStudent.status}</p>
+                </div>
+                <div className="flex gap-3">
+                  <div className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10 text-center">
+                    <p className="text-[9px] text-slate-500 uppercase font-mono">Age</p>
+                    <p className="text-sm font-bold text-white">{selectedStudent.age}</p>
+                  </div>
+                  <div className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10 text-center">
+                    <p className="text-[9px] text-slate-500 uppercase font-mono">Rank</p>
+                    <p className="text-sm font-bold text-white">#12</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-grow p-12 space-y-8">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Impact Analytics</h3>
+                    <p className="text-sm text-slate-300 font-medium">Learning progression over the last 30 days</p>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedStudent(null)}
+                    className="p-3 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-colors"
+                  >
+                    <Zap size={20} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-black/40 border border-white/5 p-5 rounded-3xl">
+                    <div className="flex items-center gap-3 mb-3 text-cyan-400">
+                      <BookOpen size={16} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Knowledge</span>
+                    </div>
+                    <p className="text-xl font-bold text-white">{selectedStudent.modules} Modules</p>
+                  </div>
+                  <div className="bg-black/40 border border-white/5 p-5 rounded-3xl">
+                    <div className="flex items-center gap-3 mb-3 text-indigo-400">
+                      <TrendingUp size={16} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Growth</span>
+                    </div>
+                    <p className="text-xl font-bold text-white">+{selectedStudent.impact} XP</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Verified Skills</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {['Critical Logic', 'Creative Expression', 'Numerical Literacy'].map(skill => (
+                      <span key={skill} className="px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-bold rounded-lg uppercase tracking-wider">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  className="w-full py-5 bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-cyan-900/20 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  Direct Micro-Grant Reward
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -343,7 +522,7 @@ export default function DonorDashboard() {
         </div>
 
         {/* Right Side: Student Progress List */}
-        <div className="w-[450px] flex flex-col gap-8 shrink-0">
+        <aside className="w-[450px] flex flex-col gap-8 shrink-0">
           <div className="flex-grow bg-black border border-white/10 rounded-[40px] p-8 flex flex-col overflow-hidden">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-sm font-black text-white uppercase tracking-widest">Active Vanguards</h3>
@@ -358,7 +537,17 @@ export default function DonorDashboard() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <button className="w-9 h-9 flex items-center justify-center bg-white/5 rounded-xl text-slate-500 hover:text-white transition-colors">
+                <button 
+                  onClick={() => {
+                    const statuses: ('All' | 'Active' | 'Learning')[] = ['All', 'Active', 'Learning'];
+                    const nextIndex = (statuses.indexOf(filterStatus) + 1) % statuses.length;
+                    setFilterStatus(statuses[nextIndex]);
+                  }}
+                  className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${
+                    filterStatus !== 'All' ? 'bg-cyan-500 text-black' : 'bg-white/5 text-slate-500 hover:text-white'
+                  }`}
+                  title={`Filter: ${filterStatus}`}
+                >
                   <Filter size={16} />
                 </button>
               </div>
@@ -410,7 +599,10 @@ export default function DonorDashboard() {
                       <Zap size={12} className="text-cyan-400" />
                       <span className="text-[10px] font-bold text-white font-mono">{student.impact} Impact XP</span>
                     </div>
-                    <button className="text-[9px] font-black text-cyan-400 uppercase tracking-widest hover:underline flex items-center gap-1">
+                    <button 
+                      onClick={() => setSelectedStudent(student)}
+                      className="text-[9px] font-black text-cyan-400 uppercase tracking-widest hover:underline flex items-center gap-1 active:scale-95 transition-all"
+                    >
                       View Profile <ArrowUpRight size={10} />
                     </button>
                   </div>
@@ -430,7 +622,7 @@ export default function DonorDashboard() {
               ))}
             </div>
           </div>
-        </div>
+        </aside>
       </main>
     </div>
   );

@@ -13,6 +13,11 @@ import CareCompanion from './components/CareCompanion';
 
 export default function App() {
   const [view, setView] = useState<'student' | 'donor'>('student');
+  const [treasuryBalance, setTreasuryBalance] = useState(102450);
+
+  const handleDonationTriggered = (amount: number) => {
+    setTreasuryBalance(prev => prev + amount);
+  };
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
@@ -25,7 +30,7 @@ export default function App() {
             exit={{ opacity: 0 }}
             className="w-full h-full"
           >
-            <Dashboard />
+            <Dashboard treasuryBalance={treasuryBalance} setTreasuryBalance={setTreasuryBalance} />
           </motion.div>
         ) : (
           <motion.div
@@ -35,7 +40,7 @@ export default function App() {
             exit={{ opacity: 0 }}
             className="w-full h-full"
           >
-            <DonorDashboard />
+            <DonorDashboard onDonation={handleDonationTriggered} />
           </motion.div>
         )}
       </AnimatePresence>

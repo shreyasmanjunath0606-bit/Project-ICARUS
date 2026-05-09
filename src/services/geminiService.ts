@@ -97,7 +97,7 @@ export async function extractCourseFromWeb(url: string, pageContent: string) {
   }
 }
 
-export async function suggestCurriculumByBudget(budget: number, ageRange: string) {
+export async function suggestCurriculumByBudget(budget: number, ageRange: string, category?: string) {
   if (!ai) {
     throw new Error("Gemini AI is not properly configured.");
   }
@@ -105,9 +105,10 @@ export async function suggestCurriculumByBudget(budget: number, ageRange: string
   const prompt = `Suggest a new educational course/module for a "Proof-of-Effort" charitable ecosystem.
   The current treasury balance is ₹${budget}. 
   The target learner age group is ${ageRange}.
+  ${category ? `The specifically requested category is: ${category}.` : ""}
   
   Provide a course that fits this budget (rewardValue should be roughly 5-10% of the total budget, but between 1000 and 10000).
-  The course should be relevant to modern tech (AI, Coding, Blockchain, or General Tech).
+  The course should be relevant to ${category || "modern tech (AI, Coding, Blockchain, or General Tech)"}.
   `;
 
   const responseSchema = {
@@ -116,7 +117,7 @@ export async function suggestCurriculumByBudget(budget: number, ageRange: string
       title: { type: Type.STRING },
       platform: { type: Type.STRING },
       description: { type: Type.STRING },
-      category: { type: Type.STRING, enum: ["Coding", "Blockchain", "AI", "General Tech"] },
+      category: { type: Type.STRING },
       rewardValue: { type: Type.NUMBER },
       questions: {
         type: Type.ARRAY,
