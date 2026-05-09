@@ -55,7 +55,6 @@ export default function Dashboard({ treasuryBalance, setTreasuryBalance }: { tre
       const newCourse: Course = {
         ...suggestedData,
         id: `ai-${Date.now()}`,
-        link: "#",
         ageRange: selectedAgeRange
       };
 

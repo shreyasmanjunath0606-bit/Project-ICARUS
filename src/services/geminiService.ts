@@ -109,6 +109,21 @@ export async function suggestCurriculumByBudget(budget: number, ageRange: string
   
   Provide a course that fits this budget (rewardValue should be roughly 5-10% of the total budget, but between 1000 and 10000).
   The course should be relevant to ${category || "modern tech (AI, Coding, Blockchain, or General Tech)"}.
+  
+  Provide a REAL working URL for the course website or a primary educational landing page.
+  CRITICAL: Do NOT only suggest YouTube. Diversify across high-quality platforms such as:
+  - Khan Academy (khanacademy.org)
+  - Coursera (coursera.org)
+  - EdX (edx.org)
+  - Brilliant (brilliant.org)
+  - Codecademy (codecademy.com)
+  - MIT OpenCourseWare (ocw.mit.edu)
+  - Harvard Online (online-learning.harvard.edu)
+  - National Geographic Kids (kids.nationalgeographic.com)
+  - NASA Kids' Club (nasa.gov/kidsclub)
+  - Duolingo (duolingo.com)
+  - ArtStation / Behance (for Art)
+  - Official documentation or project path websites (e.g., learn.microsoft.com, developer.mozilla.org, scratch.mit.edu)
   `;
 
   const responseSchema = {
@@ -116,6 +131,7 @@ export async function suggestCurriculumByBudget(budget: number, ageRange: string
     properties: {
       title: { type: Type.STRING },
       platform: { type: Type.STRING },
+      link: { type: Type.STRING, description: "A valid, real-world URL for the course website or video." },
       description: { type: Type.STRING },
       category: { type: Type.STRING },
       rewardValue: { type: Type.NUMBER },
@@ -133,7 +149,7 @@ export async function suggestCurriculumByBudget(budget: number, ageRange: string
         description: "Exactly 5 verification questions."
       }
     },
-    required: ["title", "platform", "description", "category", "rewardValue", "questions"]
+    required: ["title", "platform", "link", "description", "category", "rewardValue", "questions"]
   };
 
   try {
